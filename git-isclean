@@ -1,0 +1,123 @@
+#! /bin/zsh
+ABOUT_THIS_SCRIPT="
+
+Q: Would I lose any work by deleting a local clone of a git repository?
+A: Run this script to find out.
+
+Checks for untracked files, diffs (staged or unstages), stashes, and branches not yet pushed to some remote.
+
+Returns 0 if the repository passes all checks (no untracked files, no diffs, ...), and 1 otherwise.
+
+With the -a flag, take the first relevant automatic action:
+ ∙ if there are untracked files, run git istatus
+ ∙ if there are diffs, run 'git diff'
+ ∙ if there is one stash, run 'git stash show -p' [i.e., print the stash diff]
+ ∙ if there are multiple stashes, run git stash list
+ ∙ if a branch (incl. master) needs to be 'git push origin'ed, ask permission to do so.
+ ∙ if everything is clean, ask permission, then remove the directory!
+  You will still need to cd to another directory yourself (a subshell can't change its parent's working directory.)
+
+Setup:
+Add this to your ~/.gitconfig:
+
+[alias]
+    isclean = !/path/to/git-isclean
+
+Now you can run
+git isclean
+or 
+git isclean -a
+from any repository.
+
+Limitations:
+∙ Misses empty subdirectories---including those with only dot files!
+∙ Assumes your only remote is Origin.
+∙ Relies on English language, so parts will break if Git ever starts paying attention to the $LANG environment variable.
+
+License: CC BY SA [creative commons, attribution, share-alike]
+By Ben Klemens. See http://modelingwithdata.org/arch/00000194.htm for discussion.
+
+Some portions based on:
+http://0xfe.blogspot.com/2010/04/adding-git-status-information-to-your.html
+http://0xfe.blogspot.com/2010/04/improved-git-enabled-shell-prompt.html
+            "
+
+green="\033[0;32m"
+bold_green="\033[1;32m"
+cyan="\033[0;36m"
+bold_cyan="\033[1;36m"
+red="\033[0;31m"
+bold_red="\033[1;31m"
+no_color="\033[0m"
+
+Red_X="${bold_red}✘${no_color}"
+Check="${bold_cyan}✓${no_color}"
+Dirty=0
+
+test "$1" = "-a" 
+Action=$?
+
+onetest () { if eval $2 ; then echo $Red_X $1; Dirty=1; else echo $Check $1; fi }
+
+# unpushed branches, which is the list of remote branches that are not synced to the local HEAD.  
+# Original author had:
+## Returns "unpushed:N" where N is the number of unpushed local and remote branches (if any).
+##  local unpushed=`expr $( (git branch --no-color -r --contains $1; git branch --no-color -r) | sort | uniq -u | wc -l )`
+# I just need to know that a given branch is contained by at least one remote.
+# Assume the network of repos is not super-complicated so there's just the origin
+allbranches(){
+  for i in `git branch --no-color | sed 's/\* //'`; do
+      unpushed=`expr $( (git branch --no-color -r --contains $i) | wc -l )`
+      onetest "$i pushed to origin?" '[ "$unpushed" = "0" -o "`git branch -r`" = "" ]'
+      if [ "$unpushed" = "0" ] || [ "`git branch -r`" = "" ] ; then
+      if [ $Action = 0 ] ; then
+        echo -n "Run git push origin $i? [y/n] "
+        read yesno
+        if [ "$yesno" = "y" -o "$yesno" = 'Y' ] ; then
+            git push origin $i
+        fi
+      fi
+      fi
+  done
+}
+
+# Optional test to add for unmerged branches, if that's your workflow.
+#  local unmerged=`expr $(git branch --no-color -a --no-merged | wc -l)`
+#  onetest "unmerged files?" '[ "$unmerged" != "0" ]'
+
+# main sequence: run each test
+if [ "$1" = "-h" ]; then echo "Check whether a git repository can be deleted. Use -a to automatically run some next steps."; fi
+
+onetest "untracked files?" "git status | grep 'Untracked files' >/dev/null"
+Untracked=$Dirty
+if [ $Action = 0 ] && [ "$Untracked" != 0 ]; then git istatus; Action=1; fi;
+
+onetest "diffs?" '[ "$(git diff --shortstat 2> /dev/null)" != "" -o "$(git diff --staged --shortstat 2> /dev/null)" != "" ]'
+Diffs=$((Dirty - Untracked))
+if [ $Action = 0 ] && [ "$Diffs" != 0 ]; then git --no-pager diff; Action=1; fi;
+
+local stash=`expr $(git stash list 2>/dev/null| wc -l)` # Return the number of stashed states, not just 0|1.
+onetest "stashes?" '[ "$stash" != "0" ]'
+if [ $Action = 0 ] ; then
+    if [ $stash -eq 1 ]; then
+        git --no-pager stash show -p
+    elif [ $stash != 0 ]; then
+        git stash list
+    fi
+    Action=1
+fi
+
+allbranches
+
+if [ "$1" = "-a" ] && [ "$Dirty" = 0 ]; then
+     WD=`git rev-parse --show-toplevel`
+     echo -n "Removing $WD. OK? [y/n] "
+     read yesno
+     if [ "$yesno" = "y" -o "$yesno" = 'Y' ]; 
+        then 
+        cd $WD/..
+        rm -rf $WD
+     fi
+fi
+
+return $Dirty
