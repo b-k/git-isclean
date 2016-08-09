@@ -23,6 +23,7 @@ Add this to your ~/.gitconfig:
 [alias]
     isclean = !/path/to/git-isclean
 
+(zsh must be installed first)
 Now you can run
 git isclean
 or 
