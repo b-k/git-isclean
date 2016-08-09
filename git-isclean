@@ -4,7 +4,7 @@ ABOUT_THIS_SCRIPT="
 Q: Would I lose any work by deleting a local clone of a git repository?
 A: Run this script to find out.
 
-Checks for untracked files, diffs (staged or unstages), stashes, and branches not yet pushed to some remote.
+Checks for untracked files, diffs (staged or unstaged), stashes, and branches not yet pushed to some remote.
 
 Returns 0 if the repository passes all checks (no untracked files, no diffs, ...), and 1 otherwise.
 
