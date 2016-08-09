@@ -96,7 +96,7 @@ onetest "diffs?" '[ "$(git diff --shortstat 2> /dev/null)" != "" -o "$(git diff 
 Diffs=$((Dirty - Untracked))
 if [ $Action = 0 ] && [ "$Diffs" != 0 ]; then git --no-pager diff; Action=1; fi;
 
-local stash=`expr $(git stash list 2>/dev/null| wc -l)` # Return the number of stashed states, not just 0|1.
+stash=`expr $(git stash list 2>/dev/null| wc -l)` # Return the number of stashed states, not just 0|1.
 onetest "stashes?" '[ "$stash" != "0" ]'
 if [ $Action = 0 ] && [ "$stash" != "0" ] ; then
     if [ $stash -eq 1 ]; then
