@@ -109,6 +109,7 @@ if [ $Action = 0 ] && [ "$stash" != "0" ] ; then
     Action=1
 fi
 
+
 detached=$(git branch | grep "(.* detached .*)" | wc -l)
 onetest "head attached" "detached head" '[ $detached -gt 0 ]'
 
