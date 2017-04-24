@@ -1,9 +1,9 @@
 ABOUT_THIS_SCRIPT="
 
-Q: Would I lose any work by deleting a local clone of a git repository?
+Q: Would you lose any work by deleting a local clone of a git repository?
 A: Run this script to find out.
 
-Checks for untracked files, diffs (staged or unstaged), stashes, and branches not yet pushed to some remote.
+Checks for untracked files, detached heads, diffs (staged or unstaged), stashes, and branches not yet pushed to some remote.
 
 Returns 0 if the repository passes all checks (no untracked files, no diffs, ...), and 1 otherwise.
 
@@ -12,7 +12,9 @@ With the -a flag, take the first relevant automatic action:
  ∙ if there are diffs, run 'git diff'
  ∙ if there is one stash, run 'git stash show -p' [i.e., print the stash diff]
  ∙ if there are multiple stashes, run git stash list
+ ∙ if in a detached HEAD state, ask to merge to master; if Y, do so.
  ∙ if a branch (incl. master) needs to be 'git push origin'ed, ask permission to do so.
+ ∙ if there are submodules, recurse into them and run all of the above; else print nothing.
  ∙ if everything is clean, ask permission, then remove the directory!
   You will still need to cd to another directory yourself (a subshell can't change its parent's working directory.)
 
@@ -30,7 +32,7 @@ from any repository.
 
 Limitations:
 ∙ Misses empty subdirectories---including those with only dot files!
-∙ Assumes your only remote is Origin.
+∙ Assumes your only remote is origin.
 ∙ Relies on English language, so parts will break if Git ever starts paying attention to the $LANG environment variable.
 
 License: CC BY SA [creative commons, attribution, share-alike]
@@ -51,12 +53,13 @@ no_color="\033[0m"
 
 Red_X="${bold_red}✘${no_color}"
 Check="${bold_cyan}✓${no_color}"
+Divider="${bold_cyan}―――${no_color}"
 Dirty=0
 
 test "$1" = "-a" 
 Action=$?
 
-onetest () { if eval $2 ; then echo -e $Red_X $1; Dirty=1; else echo -e $Check $1; fi }
+onetest () { if eval $3 ; then echo -e $Red_X $2; Dirty=1; else echo -e $Check $1; fi }
 
 # unpushed branches, which is the list of remote branches that are not synced to the local HEAD.  
 # Original author had:
@@ -65,9 +68,9 @@ onetest () { if eval $2 ; then echo -e $Red_X $1; Dirty=1; else echo -e $Check $
 # I just need to know that a given branch is contained by at least one remote.
 # Assume the network of repos is not super-complicated so there's just the origin
 allbranches(){
-  for i in `git branch --no-color | sed 's/\* //'`; do
+  for i in `git branch --no-color | grep -v "(.* detached .*)" | sed 's/\* //'`; do
       unpushed=`expr $( (git branch --no-color -r --contains $i) | wc -l )`
-      onetest "$i pushed to origin?" '[ "$unpushed" = "0" -o "`git branch -r`" = "" ]'
+      onetest "$i pushed to origin" "$i not pushed to origin" '[ "$unpushed" = "0" -o "`git branch -r`" = "" ]'
       if [ "$unpushed" = "0" ] || [ "`git branch -r`" = "" ] ; then
       if [ $Action = 0 ] ; then
         echo -n "Run git push origin $i? [y/n] "
@@ -82,21 +85,21 @@ allbranches(){
 
 # Optional test to add for unmerged branches, if that's your workflow.
 #  local unmerged=`expr $(git branch --no-color -a --no-merged | wc -l)`
-#  onetest "unmerged files?" '[ "$unmerged" != "0" ]'
+#  onetest "no unmerged files" "unmerged files" '[ "$unmerged" != "0" ]'
 
 # main sequence: run each test
 if [ "$1" = "-h" ]; then echo "Check whether a git repository can be deleted. Use -a to automatically run some next steps."; fi
 
-onetest "untracked files?" "git status | grep 'Untracked files' >/dev/null"
+onetest "no untracked files" "untracked files" "git status | grep 'Untracked files' >/dev/null"
 Untracked=$Dirty
 if [ $Action = 0 ] && [ "$Untracked" != 0 ]; then git istatus; Action=1; fi;
 
-onetest "diffs?" '[ "$(git diff --shortstat 2> /dev/null)" != "" -o "$(git diff --staged --shortstat 2> /dev/null)" != "" ]'
+onetest "no unstaged diffs" "diffs to commit" '[ "$(git diff --shortstat 2> /dev/null)" != "" -o "$(git diff --staged --shortstat 2> /dev/null)" != "" ]'
 Diffs=$((Dirty - Untracked))
 if [ $Action = 0 ] && [ "$Diffs" != 0 ]; then git --no-pager diff; Action=1; fi;
 
 stash=`expr $(git stash list 2>/dev/null| wc -l)` # Return the number of stashed states, not just 0|1.
-onetest "stashes?" '[ "$stash" != "0" ]'
+onetest "no pending stashes" "stashes pending" '[ "$stash" != "0" ]'
 if [ $Action = 0 ] && [ "$stash" != "0" ] ; then
     if [ $stash -eq 1 ]; then
         git --no-pager stash show -p
@@ -106,17 +109,52 @@ if [ $Action = 0 ] && [ "$stash" != "0" ] ; then
     Action=1
 fi
 
+detached=$(git branch | grep "(.* detached .*)" | wc -l)
+onetest "head attached" "detached head" '[ $detached -gt 0 ]'
+
+if [ $Action = 0 ] && [ $detached -gt 0 ] ; then
+    if [ $detached -eq 1 ]; then
+     echo -n "Merge detached head into master? [y/n] "
+     read yesno
+     if [ "$yesno" = "y" -o "$yesno" = 'Y' ];  then
+        git checkout -b HEADregraft
+        git commit -m "Check in HEAD to merge"
+        git checkout master
+        git merge HEADregraft
+        git branch -d HEADregraft
+     fi
+     Action=1
+    else
+      echo "Multiple detached HEADs. This is biologically impossible."
+    fi
+fi
+
 allbranches
 
+# run this very program foreach submodule
+if [ -e `git rev-parse --show-toplevel`/.gitmodules ] ; then
+    echo -e "${Divider}Checking submodules"
+    if [ $Action = 0 ] ; then
+        git submodule foreach "$0 -a"
+    else
+        git submodule foreach "$0"
+    fi
+    Subdirty=$?
+    Dirty=$((Dirty + $Subdirty))
+#else: submodules are so infrequently used, don't even mention this test if no .gitmodules.
+    #$onetest "no submodules to check" "--" false
+fi
+
+#OK, checks done. Check to remove working directory
 if [ "$1" = "-a" ] && [ "$Dirty" = 0 ]; then
      WD=`git rev-parse --show-toplevel`
      echo -n "Removing $WD. OK? [y/n] "
      read yesno
-     if [ "$yesno" = "y" -o "$yesno" = 'Y' ]; 
-        then 
+     if [ "$yesno" = "y" -o "$yesno" = 'Y' ]; then 
         cd $WD/..
         rm -rf $WD
      fi
 fi
+
 
 [ $Dirty -eq 0 ] #return value
