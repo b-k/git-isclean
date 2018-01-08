@@ -90,7 +90,7 @@ allbranches(){
 # main sequence: run each test
 if [ "$1" = "-h" ]; then echo "Check whether a git repository can be deleted. Use -a to automatically run some next steps."; fi
 
-onetest "no untracked files" "untracked files" "git status | grep 'Untracked files' >/dev/null"
+onetest "no untracked files" "untracked files" '[ `git ls-files --others --exclude-standard | wc -l` -ne 0 ]'
 Untracked=$Dirty
 if [ $Action = 0 ] && [ "$Untracked" != 0 ]; then git istatus; Action=1; fi;
 
