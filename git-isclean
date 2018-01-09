@@ -68,7 +68,7 @@ onetest () { if eval $3 ; then echo -e $Red_X $2; Dirty=1; else echo -e $Check $
 # I just need to know that a given branch is contained by at least one remote.
 # Assume the network of repos is not super-complicated so there's just the origin
 allbranches(){
-  for i in `git branch --no-color | grep -v "(.* detached .*)" | sed 's/\* //'`; do
+  for i in `git branch --no-color | grep -v "(HEAD.*)" | sed 's/\* //'`; do
       unpushed=`expr $( (git branch --no-color -r --contains $i) | wc -l )`
       onetest "$i pushed to origin" "$i not pushed to origin" '[ "$unpushed" = "0" -o "`git branch -r`" = "" ]'
       if [ "$unpushed" = "0" ] || [ "`git branch -r`" = "" ] ; then
@@ -109,9 +109,7 @@ if [ $Action = 0 ] && [ "$stash" != "0" ] ; then
     Action=1
 fi
 
-
-detached=$(git branch | grep "(.* detached .*)" | wc -l)
-onetest "head attached" "detached head" '[ $detached -gt 0 ]'
+onetest "head attached" "detached head" 'grep -v "^ref" `git rev-parse --show-toplevel`/.git/HEAD > /dev/null'
 
 if [ $Action = 0 ] && [ $detached -gt 0 ] ; then
     if [ $detached -eq 1 ]; then
