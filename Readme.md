@@ -1,4 +1,4 @@
-Q: Would you lose any work if your a local clone of a git repository were lost?  
+Q: Would you lose any work if your local clone of a git repository were lost?  
 A: Run this script to find out.
 
 The script is useful to check the state of your project and what needs to be cleaned up.
