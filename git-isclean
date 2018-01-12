@@ -1,6 +1,6 @@
 ABOUT_THIS_SCRIPT="
 
-Q: Would you lose any work by deleting a local clone of a git repository?
+Q: Would you lose any work if your local clone of a git repository were lost?
 A: Run this script to find out.
 
 Checks for untracked files, detached heads, diffs (staged or unstaged), stashes, and branches not yet pushed to some remote.
@@ -8,6 +8,7 @@ Checks for untracked files, detached heads, diffs (staged or unstaged), stashes,
 Returns 0 if the repository passes all checks (no untracked files, no diffs, ...), and 1 otherwise.
 
 With the -a flag, take the first relevant automatic action:
+ ∙ if this is not even a git repository, run git init
  ∙ if there are untracked files, run git istatus
  ∙ if there are diffs, run 'git diff'
  ∙ if there is one stash, run 'git stash show -p' [i.e., print the stash diff]
@@ -16,7 +17,13 @@ With the -a flag, take the first relevant automatic action:
  ∙ if a branch (incl. master) needs to be 'git push origin'ed, ask permission to do so.
  ∙ if there are submodules, recurse into them and run all of the above; else print nothing.
  ∙ if everything is clean, ask permission, then remove the directory!
-  You will still need to cd to another directory yourself (a subshell can't change its parent's working directory.)
+
+The last step is intended for people who have the work habit of not leaving copies of
+repositories in their home directory if they aren't needed—effectively putting them
+back on the shelf to take down later. If that isn't your habit, it is safe to remove the
+last block of this script that does that check. If you delete the directory entirely,
+you will still need to `cd` to another directory yourself (a subshell can't change
+its parent's working directory.)
 
 Setup:
 Add this to your ~/.gitconfig:
@@ -32,8 +39,7 @@ from any repository.
 
 Limitations:
 ∙ Misses empty subdirectories---including those with only dot files!
-∙ Assumes your only remote is origin.
-∙ Relies on English language, so parts will break if Git ever starts paying attention to the $LANG environment variable.
+∙ Assumes your only remote is `origin`.
 
 License: CC BY SA [creative commons, attribution, share-alike]
 By Ben Klemens. See http://modelingwithdata.org/arch/00000194.htm for discussion.
