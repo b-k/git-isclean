@@ -7,7 +7,7 @@ Checks for:
  ∙ whether this is a git repository at all  
  ∙ untracked files  
  ∙ diffs not yet checked in  
- ∙ stashes
+ ∙ stashes  
  ∙ detached HEAD  
  ∙ branches not pushed to `origin`  
  ∙ all of the above for any submodules
