@@ -109,7 +109,8 @@ if [ $Action = 0 ] && [ "$stash" != "0" ] ; then
     Action=1
 fi
 
-onetest "head attached" "detached head" 'grep -v "^ref" `git rev-parse --show-toplevel`/.git/HEAD > /dev/null'
+detached=`grep -v "^ref" $(git rev-parse --show-toplevel)/.git/HEAD |wc -l`
+onetest "head attached" "detached head" '[ $detached -gt 0 ]'
 
 if [ $Action = 0 ] && [ $detached -gt 0 ] ; then
     if [ $detached -eq 1 ]; then
