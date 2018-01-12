@@ -39,7 +39,7 @@ from any repository.
 
 Limitations:
 ∙ Misses empty subdirectories---including those with only dot files!
-∙ Assumes your only remote is `origin`.
+∙ Assumes your only remote is origin.
 
 License: CC BY SA [creative commons, attribution, share-alike]
 By Ben Klemens. See http://modelingwithdata.org/arch/00000194.htm for discussion.
@@ -95,6 +95,24 @@ allbranches(){
 
 # main sequence: run each test
 if [ "$1" = "-h" ]; then echo "Check whether a git repository can be deleted. Use -a to automatically run some next steps."; fi
+
+is_repository=$(git status > /dev/null  2> /dev/null; echo $?)
+if [ $is_repository -gt 0 ]; then
+    echo -e $Red_X "Not a git repository"; Dirty=1;
+    if [ $Action -eq 0 ] ; then
+         echo -n "Initialize repository? [y/n] "
+         read yesno
+         if [ "$yesno" = "y" -o "$yesno" = 'Y' ]; then
+             git init
+         fi
+    fi
+fi
+
+if [ $is_repository -eq 0 ]; then #skip to the end if not a repository
+
+Untracked=$Dirty
+if [ $Action -eq 0 ] && [ "$Untracked" != 0 ]; then git istatus; Action=1; fi;
+
 
 onetest "no untracked files" "untracked files" '[ `git ls-files --others --exclude-standard | wc -l` -ne 0 ]'
 Untracked=$Dirty
@@ -162,5 +180,5 @@ if [ "$1" = "-a" ] && [ "$Dirty" = 0 ]; then
      fi
 fi
 
-
+fi #if isnt_repository we skipped almost all of the above
 [ $Dirty -eq 0 ] #return value
