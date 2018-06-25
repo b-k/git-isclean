@@ -83,7 +83,7 @@ allbranches(){
       if [ $Action = 0 ] ; then
         echo -n "Run git push origin $i? [y/n] "
         read yesno
-        if [ "$yesno" = "y" -o "$yesno" = 'Y' ] ; then
+        if [ "$yesno" != "n" -a "$yesno" != 'N' ]; then
             git push origin $i
         fi
       fi
@@ -104,7 +104,7 @@ if [ $is_repository -gt 0 ]; then
     if [ $Action -eq 0 ] ; then
          echo -n "Initialize repository? [y/n] "
          read yesno
-         if [ "$yesno" = "y" -o "$yesno" = 'Y' ]; then
+         if [ "$yesno" != "n" -a "$yesno" != 'N' ]; then
              git init
          fi
     fi
@@ -135,6 +135,18 @@ if [ $Action = 0 ] && [ "$stash" != "0" ] ; then
     Action=1
 fi
 
+unpushed_tags=`git show-ref --tags | grep -v -F "$(git ls-remote --tags origin | grep -v '\^{}' | cut -f 2)" | sed 's#.*tags/##'`
+
+onetest "no unpushed tags" "unpushed tags: $unpushed_tags" '[ ! -z "$unpushed_tags" ]'
+if [ $Action = 0 ] && [ ! -z "$unpushed_tags" ] ; then
+    echo -n "Push all tags? [y/n] "
+    read yesno
+    if [ "$yesno" != "n" -a "$yesno" != 'N' ]; then
+         git push --tags
+    fi
+    Action=1
+fi
+
 detached=`grep -v "^ref" $(git rev-parse --show-toplevel)/.git/HEAD |wc -l`
 onetest "head attached" "detached head" '[ $detached -gt 0 ]'
 
@@ -142,7 +154,7 @@ if [ $Action = 0 ] && [ $detached -gt 0 ] ; then
     if [ $detached -eq 1 ]; then
      echo -n "Merge detached head into master? [y/n] "
      read yesno
-     if [ "$yesno" = "y" -o "$yesno" = 'Y' ];  then
+    if [ "$yesno" != "n" -a "$yesno" != 'N' ]; then
         git checkout -b HEADregraft
         git commit -m "Check in HEAD to merge"
         git checkout master
@@ -176,7 +188,7 @@ if [ "$1" = "-a" ] && [ "$Dirty" = 0 ]; then
      WD=`git rev-parse --show-toplevel`
      echo -n "Removing $WD. OK? [y/n] "
      read yesno
-     if [ "$yesno" = "y" -o "$yesno" = 'Y' ]; then 
+     if [ "$yesno" != "n" -a "$yesno" != 'N' ]; then
         cd $WD/..
         rm -rf $WD
      fi
