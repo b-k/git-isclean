@@ -10,6 +10,7 @@ Checks for:
  ∙ stashes  
  ∙ detached HEAD  
  ∙ branches not pushed to `origin`  
+ ∙ tags not pushed to `origin`
  ∙ all of the above for any submodules
 
 The script itself had detailed notes, including about setting up and using the `-a`

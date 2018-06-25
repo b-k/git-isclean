@@ -3,7 +3,7 @@ ABOUT_THIS_SCRIPT="
 Q: Would you lose any work if your local clone of a git repository were lost?
 A: Run this script to find out.
 
-Checks for untracked files, detached heads, diffs (staged or unstaged), stashes, and branches not yet pushed to some remote.
+Checks for untracked files, detached heads, diffs (staged or unstaged), stashes, unpushed tags, and branches not yet pushed to some remote.
 
 Returns 0 if the repository passes all checks (no untracked files, no diffs, ...), and 1 otherwise.
 
@@ -15,6 +15,7 @@ before doing anything. If an action feels unsafe or inappropriate, just say no o
  ∙ If there are diffs, run 'git diff'.
  ∙ If there is one stash, run 'git stash show -p' [i.e., print the stash diff].
  ∙ If there are multiple stashes, run 'git stash list'.
+ ∙ If there are tags not pushed to origin, push them.
  ∙ If in a detached HEAD state, merge to master.
  ∙ If a branch (incl. master) needs to be 'git push origin'ed, do so.
  ∙ If there are submodules, recurse into them and run all of the above; else print nothing.
