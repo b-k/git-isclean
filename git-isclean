@@ -148,7 +148,7 @@ if [ $Action = 0 ] && [ ! -z "$unpushed_tags" ] ; then
     Action=1
 fi
 
-detached=`grep -v "^ref" $(git rev-parse --show-toplevel)/.git/HEAD |wc -l`
+detached=`grep -v "^ref" "$(git rev-parse --show-toplevel)/.git/HEAD" |wc -l`
 onetest "head attached" "detached head" '[ $detached -gt 0 ]'
 
 if [ $Action = 0 ] && [ $detached -gt 0 ] ; then
@@ -171,7 +171,7 @@ fi
 allbranches
 
 # run this very program foreach submodule
-if [ -e `git rev-parse --show-toplevel`/.gitmodules ] ; then
+if [ -e "`git rev-parse --show-toplevel`/.gitmodules" ] ; then
     echo -e "${Divider}Checking submodules"
     if [ $Action = 0 ] ; then
         git submodule foreach "$0 -a"
@@ -186,7 +186,7 @@ fi
 
 #OK, checks done. Check to remove working directory
 if [ "$1" = "-a" ] && [ "$Dirty" = 0 ]; then
-     WD=`git rev-parse --show-toplevel`
+     WD="`git rev-parse --show-toplevel`"
      echo -n "Removing $WD. OK? [y/n] "
      read yesno
      if [ "$yesno" != "n" -a "$yesno" != 'N' ]; then
