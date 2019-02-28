@@ -190,8 +190,8 @@ if [ "$1" = "-a" ] && [ "$Dirty" = 0 ]; then
      echo -n "Removing $WD. OK? [y/n] "
      read yesno
      if [ "$yesno" != "n" -a "$yesno" != 'N' ]; then
-        cd $WD/..
-        rm -rf $WD
+        cd "$WD/.."
+        rm -rf "$WD"
      fi
 fi
 
