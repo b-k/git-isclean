@@ -68,7 +68,7 @@ Dirty=0
 test "$1" = "-a" 
 Action=$?
 
-onetest () { if eval $3 ; then echo -e $Red_X $2; Dirty=1; else echo -e $Check $1; fi }
+onetest () { if eval $3 ; then printf "$Red_X $2\n"; Dirty=1; else printf "$Check $1\n"; fi }
 
 # unpushed branches, which is the list of remote branches that are not synced to the local HEAD.  
 # Original author had:
@@ -101,7 +101,7 @@ if [ "$1" = "-h" ]; then echo "Check whether a git repository can be deleted. Us
 
 is_repository=$(git status > /dev/null  2> /dev/null; echo $?)
 if [ $is_repository -gt 0 ]; then
-    echo -e $Red_X "Not a git repository"; Dirty=1;
+    printf "$Red_X Not a git repository\n"; Dirty=1;
     if [ $Action -eq 0 ] ; then
          echo -n "Initialize repository? [y/n] "
          read yesno
