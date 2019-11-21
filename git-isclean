@@ -11,7 +11,7 @@ With the -a flag, take the first relevant automatic action. In every case, ask p
 before doing anything. If an action feels unsafe or inappropriate, just say no or hit <ctrl>-C to leave.
 
  ∙ If this is not even a git repository, run git init.
- ∙ If there are untracked files, run git istatus.
+ ∙ If there are untracked files, run git status -s.
  ∙ If there are diffs, run 'git diff'.
  ∙ If there is one stash, run 'git stash show -p' [i.e., print the stash diff].
  ∙ If there are multiple stashes, run 'git stash list'.
@@ -114,12 +114,12 @@ fi
 if [ $is_repository -eq 0 ]; then #skip to the end if not a repository
 
 Untracked=$Dirty
-if [ $Action -eq 0 ] && [ "$Untracked" != 0 ]; then git istatus; Action=1; fi;
+if [ $Action -eq 0 ] && [ "$Untracked" != 0 ]; then git status -s; Action=1; fi;
 
 
 onetest "no untracked files" "untracked files" '[ `git ls-files --others --exclude-standard | wc -l` -ne 0 ]'
 Untracked=$Dirty
-if [ $Action = 0 ] && [ "$Untracked" != 0 ]; then git istatus; Action=1; fi;
+if [ $Action = 0 ] && [ "$Untracked" != 0 ]; then git status -s; Action=1; fi;
 
 onetest "no unstaged diffs" "diffs to commit" '[ "$(git diff --shortstat 2> /dev/null)" != "" -o "$(git diff --staged --shortstat 2> /dev/null)" != "" ]'
 Diffs=$((Dirty - Untracked))
